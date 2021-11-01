@@ -86,7 +86,7 @@ class UsuarioController extends Controller
         {
             if ((int)$id > 0)
             {
-                \JWTAuth::invalidate(\JWTAuth::fromUser(User::find($id)));
+                // \JWTAuth::invalidate(\JWTAuth::fromUser(User::find($id)));
 
                 if(!$s = $this->usuarioRepository->deleteById($id))
                 {

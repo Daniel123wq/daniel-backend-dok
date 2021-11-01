@@ -65,7 +65,7 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
      */
     public function beforeCreate(array &$payload): void
     {
-        $payload['user_id'] = 1;
+        $payload['user_id'] = auth()->user()->id;
     }
       /**
      * Handle the Model "beforeUpdate" event.
@@ -74,7 +74,23 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
      */
     public function beforeUpdate(array &$payload): void
     {
-        $payload['user_id'] = 1;
+        $userAuth = auth()->user()->id;
+        if ($this->model->id != $userAuth) {
+            throw new \Exception("Você não pode atualizar esse Veiculo", 200);
+        }
+        $payload['user_id'] = $userAuth;
+    }
+      /**
+     * Handle the Model "beforeDelete" event.
+     *
+     * @return int
+     */
+    public function beforeDelete(int &$id): void
+    {
+        $userAuth = auth()->user()->id;
+        if ($id != $userAuth) {
+            throw new \Exception("Você não pode apagar esse Veiculo ID:". $id, 200);
+        }
     }
     /**
      * Handle the Model "created" event.
