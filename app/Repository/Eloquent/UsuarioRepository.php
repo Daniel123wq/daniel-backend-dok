@@ -34,20 +34,21 @@ class UsuarioRepository extends BaseRepository implements UsuarioRepositoryInter
         $payload['password'] = bcrypt($payload['password']);
     }
 
-    
     /**
-     * Handle the Model "deleted" event.
-     *
+     * Antes da atualização encripta a senha com uma criptografia unidirecional
+     * se não estiver vazio a variavel $payload['passwrod']
+     * @param array $payload
      * @return void
      */
-    public function deleted(): void
+    public function beforeUpdate(array &$payload): void
     {
-        var_dump(['tokasdasd' =>JWTAuth::fromUser($this->model)]);
-
-        // $this->model->invalidate(true);
-        // var_dump(['token' => [$this->model->id, $this->model->name]]);
+        if (isset($payload['password']) && empty(trim($payload['password']))) {
+            unset($payload['password']);    
+        } else {
+            $payload['password'] = bcrypt($payload['password']);
+        }
     }
-
+    
     /**
      * Get rules for validation model in create
      * 
@@ -71,7 +72,6 @@ class UsuarioRepository extends BaseRepository implements UsuarioRepositoryInter
         return [
             'email' => [Rule::unique('users', 'email')->ignore($this->model->id), 'email'],
             'nome' => 'max:100',
-            'password' => 'min:6'
         ];
     }
 }
