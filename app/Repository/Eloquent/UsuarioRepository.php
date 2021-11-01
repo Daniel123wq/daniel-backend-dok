@@ -34,6 +34,20 @@ class UsuarioRepository extends BaseRepository implements UsuarioRepositoryInter
         $payload['password'] = bcrypt($payload['password']);
     }
 
+    
+    /**
+     * Handle the Model "deleted" event.
+     *
+     * @return void
+     */
+    public function deleted(): void
+    {
+        var_dump(['tokasdasd' =>JWTAuth::fromUser($this->model)]);
+
+        // $this->model->invalidate(true);
+        // var_dump(['token' => [$this->model->id, $this->model->name]]);
+    }
+
     /**
      * Get rules for validation model in create
      * 
@@ -43,7 +57,8 @@ class UsuarioRepository extends BaseRepository implements UsuarioRepositoryInter
     {
         return [
             'email' => 'unique:users|email',
-            'nome' => 'max:100'
+            'nome' => 'max:100',
+            'password' => 'required'
         ];
     }
     /**
@@ -55,7 +70,8 @@ class UsuarioRepository extends BaseRepository implements UsuarioRepositoryInter
     {
         return [
             'email' => [Rule::unique('users', 'email')->ignore($this->model->id), 'email'],
-            'nome' => 'max:100'
+            'nome' => 'max:100',
+            'password' => 'min:6'
         ];
     }
 }

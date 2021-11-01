@@ -23,7 +23,7 @@ class Veiculo extends Model
         'updated_at' => 'datetime:d/m/Y H:i:s'
     ];
 
-    public function usuario()
+    public function users()
     {
         return $this->belongsTo(User::class, 'user_id');
     }

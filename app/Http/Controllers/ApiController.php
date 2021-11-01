@@ -62,14 +62,13 @@ class ApiController extends Controller
                 return response()->json([
                 	'success' => false,
                 	'message' => 'Suas credênciais de login são inválidas.',
-                ], 400);
+                ], 200);
             }
         } catch (JWTException $e) {
-    	return $credentials;
             return response()->json([
                 	'success' => false,
                 	'message' => 'Não foi possível criar token.',
-                ], 500);
+                ], 200);
         }
  	
  		//Token created, return with success response and jwt token

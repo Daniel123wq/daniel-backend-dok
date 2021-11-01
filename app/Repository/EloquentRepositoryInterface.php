@@ -14,9 +14,10 @@ interface EloquentRepositoryInterface
      * @param array $relations
      * @param int $perPage
      * @param bol $hasPagination
+     * @param array $requestByW2ui
      * @return Collection
      */
-    public function all(array $columns = ['*'], array $relations = [], int $perPage = 25, bool $hasPagination = false): Collection;
+    public function all(array $columns = ['*'], array $relations = [], int $perPage = 25, bool $hasPagination = false, array $requestByW2ui = []): Collection;
 
     /**
      * Get all trashed models
@@ -58,21 +59,39 @@ interface EloquentRepositoryInterface
     public function findOnlyTrashedById(int $modelId): ?Model;
 
     /**
+     * Validação da criação
+     * 
+     * @param array $payload
+     * @return array $error
+     */
+    public function validateOnCreate(array $payload): array;
+    
+    /**
      * Create a model
      * 
      * @param array $payload
-     * @return Model
+     * @return Collection
      */
-    public function create(Array $payload): ?Model;
+    public function create(Array $payload): ?Collection;
 
+    
+    /**
+     * Validação da atualização
+     * 
+     * @param int $modelId
+     * @param array $payload
+     * @return array $error
+     */
+    public function validateOnUpdate(int $modelId, array $payload): array;
+    
     /**
      * Update existing model.
      * 
      * @param int $modelId
      * @param array $payload
-     * @return bool
+     * @return array
      */
-    public function update(int $modelId, array $payload): bool;
+    public function update(int $modelId, array $payload): array;
 
     /**
      * Delete model by id
@@ -98,8 +117,6 @@ interface EloquentRepositoryInterface
      */
     public function permanentlyDeleteById(int $modelId): bool;
 
-
-    
 
     // /**
     //  * Handle the Model "created" event.

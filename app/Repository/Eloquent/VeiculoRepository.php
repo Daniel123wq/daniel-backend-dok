@@ -37,7 +37,8 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
             'placa' => [Rule::unique('veiculos', 'placa'), 'required', 'placa'],
             'modelo' => 'required|max:45',
             'cor' => 'max:15',
-            'tipo' => Rule::in(['carro', 'moto'])
+            'tipo' => Rule::in(['carro', 'moto']),
+            'user_id' => 'exists:App\Models\User,id|integer',
         ];
     }
 
@@ -52,7 +53,8 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
             'placa' => [Rule::unique('veiculos', 'placa')->ignore($this->model->id), 'required', 'placa'],
             'modelo' => 'required|max:45',
             'cor' => 'max:15',
-            'tipo' => Rule::in(['carro', 'moto'])
+            'tipo' => Rule::in(['carro', 'moto']),
+            'user_id' => 'exists:App\Models\User,id|integer',
         ];
     }
 
@@ -63,7 +65,7 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
      */
     public function beforeCreate(array &$payload): void
     {
-        $payload['user_id'] = auth()->user()->id;
+        $payload['user_id'] = 1;
     }
       /**
      * Handle the Model "beforeUpdate" event.
@@ -72,7 +74,7 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
      */
     public function beforeUpdate(array &$payload): void
     {
-        $payload['user_id'] = auth()->user()->id;
+        $payload['user_id'] = 1;
     }
     /**
      * Handle the Model "created" event.

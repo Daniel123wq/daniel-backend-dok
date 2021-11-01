@@ -36,10 +36,6 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             if (!env('APP_DEBUG')) {
-                http_response_code((int)$e->getCode());
-                header("Content-Type: application/json");
-                echo $e->getMessage();
-                exit;
             }
         });
     }

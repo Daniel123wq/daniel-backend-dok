@@ -21,6 +21,7 @@ class VeiculoController extends Controller
             request()->input('relations', []),
             request()->input('per-page', 25),
             request()->input('page') ? true : false,
+            request()->all(),
         ), 200);
     }
 
@@ -32,7 +33,12 @@ class VeiculoController extends Controller
      */
     public function store(Request $request)
     {
-        return response()->json($this->veiculoRepository->create($request->all()), 200);
+        
+        $response = false;
+        if (!$response = $this->veiculoRepository->validateOnCreate($request->all())) {
+            $response = $this->veiculoRepository->create($request->all());
+        }
+        return response()->json($response, 200);
     }
 
     /**
@@ -59,7 +65,12 @@ class VeiculoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        return response()->json($this->veiculoRepository->update($id, $request->all()), 200);
+        
+        $response = false;
+        if (!$response = $this->veiculoRepository->validateOnUpdate($id, $request->all())) {
+            $response = $this->veiculoRepository->update($id, $request->all());
+        }
+        return response()->json($response, 200);
     }
 
     /**

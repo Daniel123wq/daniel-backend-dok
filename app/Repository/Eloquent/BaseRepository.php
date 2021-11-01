@@ -2,6 +2,7 @@
 
 namespace App\Repository\Eloquent;
 
+use App\Helpers\Helper;
 use App\Repository\EloquentRepositoryInterface;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -53,23 +54,65 @@ class BaseRepository implements EloquentRepositoryInterface
      * @param array $relations
      * @param int $perPage
      * @param bool $hasPagination
+     * @param array $requestByW2ui
      * @return Collection $collection
      */
-    public function all(array $columns = ['*'], array $relations = [], int $perPage = 25, bool $hasPagination = false): Collection
+    public function all(
+        array $columns = ['*'],
+        array $relations = [],
+        int $perPage = 25,
+        bool $hasPagination = false,
+        array $requestByW2ui = []
+    ): Collection
     {
         $collection = new Collection();
         try {
-            if ($relations) {
-                $columns = array_merge($columns, ['id']);
-            }
-            $query = $this->model->with($relations);
-            if ($hasPagination) {
-                $collection =  new Collection($query->paginate($perPage, $columns));
+            $r = $requestByW2ui;
+            if (isset($r['w2ui'])) {
+                $limit = $r['limit'] ?? 50;
+                $offset = $r['offset'] ?? 0;
+                $page = ($offset / $limit) + 1;
+                $where = [];
+                $data = $this->model->orWhere($where);
+                if (isset($r['search'])) {
+                    Helper::createWhereByW2uiGrid($r['search'],$r['searchLogic'] ?? 'or', $data);
+                }
+                if (isset($r['sort'])) {
+                    foreach ($r['sort'] as $e) {
+                        $data = $data->orderBy($e['field'], $e['direction']);
+                    }
+                }
+                // return new Collection($data->rawSql());
+                if (isset($r['withs'])) {
+                    $data = $data->with($r['withs']);
+                }
+                if (isset($r['isSelect'])) {
+                    $r['data'] = $data->get($r['isSelect']);
+                    $r['total'] = sizeof($r['data']);
+                } else {
+                    $r = $data->paginate($limit, $r['select'] ?? ['*'], 'page', $page)->toArray();
+                }
+
+                $response = [
+                    'status' => 'success',
+                    'total' => $r['total'] ?? 0,
+                    'records' => $r['data'] ?? [],
+                    'summary'=> []
+                ];
+                $collection = new Collection($response);
             } else {
-                $collection =  $query->get($columns);
+                if ($relations) {
+                    $columns = array_merge($columns, ['id']);
+                }
+                $query = $this->model->with($relations);
+                if ($hasPagination) {
+                    $collection =  new Collection($query->paginate($perPage, $columns));
+                } else {
+                    $collection =  $query->get($columns);
+                }
             }
         } catch (\Throwable $th) {
-            throw new Exception(json_encode($th->getMessage()), 400);
+            throw new Exception(json_encode($th->getMessage()), 200);
         }
         return $collection;
     }
@@ -132,56 +175,85 @@ class BaseRepository implements EloquentRepositoryInterface
         return $this->model->onlyTrashed()->findOrFail($modelId);
     }
 
+
+    
+    /**
+     * Validação da criação
+     * 
+     * @param array $payload
+     * @return array $error
+     */
+    public function validateOnCreate(array $payload): array
+    {
+        $error = [];
+        $validator = Validator::make($payload, $this->getRulesCreate());
+        if ($validator->fails()) {
+            $error = ['status'=> false, 'message'=> 'não passou na validação','error' => $validator->errors()->getMessages()];
+        }
+        return $error;
+    }
     /**
      * Create a model
      * 
      * @param array $payload
-     * @return Model
+     * @return Collection
      */
-    public function create(array $payload): ?Model
+    public function create(array $payload): ?Collection
     {
-        $validator = Validator::make($payload, $this->getRulesCreate());
-        if ($validator->fails()) {
-            $erros = json_encode(['error' => $validator->errors()->getMessages()]);
-            throw new Exception($erros, 400);
-        }
         try {
             $this->beforeCreate($payload);
             $model = $this->model->create($payload);
             if ($model) {
                 $this->created();
             }
-            return $model->fresh();
+            $collection = new Collection([
+                'status' => true,
+                'message' => 'Criado com sucesso',
+                'model' => $model->fresh()
+            ]);
+            return $collection;
         } catch (\Throwable $th) {
             throw new Exception($th->getMessage(), 400);
         }
     }
 
     /**
+     * Validação da atualização
+     * 
+     * @param array $payload
+     * @return array $error
+     */
+    public function validateOnUpdate(int $modelId, array $payload): array
+    {
+        $this->model = $this->findById($modelId);
+        $error = [];
+        $validator = Validator::make($payload, $this->getRulesUpdate());
+        if ($validator->fails()) {
+            $error = ['status'=> false, 'message'=> 'não passou na validação','error' => $validator->errors()->getMessages()];
+        }
+        return $error;
+    }
+    /**
      * Update existing model.
      * 
      * @param int $modelId
      * @param array $payload
-     * @return bool
+     * @return array
      */
-    public function update(int $modelId, array $payload): bool
+    public function update(int $modelId, array $payload): array
     {
-        $this->model = $this->findById($modelId);
-        $validator = Validator::make($payload, $this->getRulesUpdate());
-        if ($validator->fails()) {
-            $erros = json_encode(['error' => $validator->errors()->getMessages()]);
-            throw new Exception($erros, 400);
-        }
         try {
+            // $this->model = $this->findById($modelId);
             $this->beforeCreate($payload);
             $bool = $this->model->update($payload);
             if ($bool) {
                 $this->updated();
             }
-            return $bool;
+            $result = ['status' => $bool, 'message' => 'Atualiado com Sucesso.'];
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), 400);
+            $result = ['status' => false,'message' => $th->getMessage()];
         }
+        return $result;
     }
 
     /**
@@ -193,7 +265,11 @@ class BaseRepository implements EloquentRepositoryInterface
     public function deleteById(int $modelId): bool
     {
         try {
-            return $this->findById($modelId)->delete();
+            $bool = $this->findById($modelId)->delete();
+            if ($bool) {
+                $this->deleted();         
+            }
+            // return $bool;
         } catch (\Throwable $th) {
             return false;
         }
