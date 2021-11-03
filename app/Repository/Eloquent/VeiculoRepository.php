@@ -75,7 +75,7 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
     public function beforeUpdate(array &$payload): void
     {
         $userAuth = auth()->user()->id;
-        if ($this->model->id != $userAuth) {
+        if (isset($this->model->user_id) ||$this->model->user_id != $userAuth) {
             throw new \Exception("Você não pode atualizar esse Veiculo", 200);
         }
         $payload['user_id'] = $userAuth;
@@ -88,7 +88,7 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
     public function beforeDelete(int &$id): void
     {
         $userAuth = auth()->user()->id;
-        if ($id != $userAuth) {
+        if (!isset($this->model->user_id) || $this->model->user_id != $userAuth) {
             throw new \Exception("Você não pode apagar esse Veiculo ID:". $id, 200);
         }
     }
