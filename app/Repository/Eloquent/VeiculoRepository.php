@@ -75,7 +75,7 @@ class VeiculoRepository extends BaseRepository implements VeiculoRepositoryInter
     public function beforeUpdate(array &$payload): void
     {
         $userAuth = auth()->user()->id;
-        if (isset($this->model->user_id) ||$this->model->user_id != $userAuth) {
+        if (!isset($this->model->user_id) || $this->model->user_id != $userAuth) {
             throw new \Exception("Você não pode atualizar esse Veiculo", 200);
         }
         $payload['user_id'] = $userAuth;

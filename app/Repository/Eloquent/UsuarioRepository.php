@@ -35,18 +35,14 @@ class UsuarioRepository extends BaseRepository implements UsuarioRepositoryInter
     }
 
     /**
-     * Antes da atualização encripta a senha com uma criptografia unidirecional
-     * se não estiver vazio a variavel $payload['passwrod']
-     * @param array $payload
+     * Antes da deleção invalida todos o Token JWT 
+     * 
+     * @param int $modelId
      * @return void
      */
-    public function beforeUpdate(array &$payload): void
+    public function beforeDelete(int &$modelId): void
     {
-        if (isset($payload['password']) && empty(trim($payload['password']))) {
-            unset($payload['password']);    
-        } else {
-            $payload['password'] = bcrypt($payload['password']);
-        }
+        \JWTAuth::invalidate(\JWTAuth::fromUser($this->model));
     }
     
     /**

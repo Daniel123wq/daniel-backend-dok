@@ -243,7 +243,7 @@ class BaseRepository implements EloquentRepositoryInterface
     public function update(int $modelId, array $payload): array
     {
         try {
-            // $this->model = $this->findById($modelId);
+            $this->model = $this->findById($modelId);
             $this->beforeUpdate($payload);
             $bool = $this->model->update($payload);
             if ($bool) {
@@ -265,8 +265,12 @@ class BaseRepository implements EloquentRepositoryInterface
     public function deleteById(int $modelId): bool
     {
         try {
-            $this->beforeDelete($modelId);
-            $bool = $this->findById($modelId)->delete();
+            $bool = false;
+            $this->model = $this->findById($modelId);
+            if ($this->model) {
+                $this->beforeDelete($modelId);
+                $bool = $this->model->delete();
+            }
             if ($bool) {
                 $this->deleted();         
             }
